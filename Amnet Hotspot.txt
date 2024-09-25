@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amnet Hotspot</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: var(--container-bg);
+            padding: 1.5rem;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+        }
+        h1, h2, h3 {
+            color: #ffffff;
+            font-weight: 600;
+        }
+        input, button {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+        }
+        button {
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 0.7rem 1rem;
+            font-size: 1rem;
+        }
+        .packages {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            max-width: 350px;
+            margin: 0 auto;
+        }
+        .package {
+            background-color: #3a3a3a;
+            border: 1px solid #00a86b;
+            padding: 0.1rem;
+            text-align: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .package:hover {
+            background-color: #4a4a4a;
+        }
+        table, th, td {
+            border: 1px solid black;
+            padding: 0.5rem;
+            text-align: center;
+            width: 100%;
+        }
+        canvas {
+            max-width: 100%;
+        }
+        #logMessages {
+            max-height: 200px;
+            overflow-y: scroll;
+            border: 1px solid black;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Amnet Hotspot</h1>
+
+    <!-- User Login Section -->
+    <div id="userView">
+        <h2>Login to Hotspot</h2>
+        <form id="loginForm">
+            <input type="password" id="hotspotPassword" placeholder="Enter password" required>
+            <button type="submit">Connect</button>
+        </form>
+        <p id="loginMessage" style="color:red;"></p>
+
+        <div class="packages">
+            <div class="package" data-price="1 Ksh" data-duration="5 Min">
+                <h3>1 Ksh</h3><p>5 Min</p>
+            </div>
+            <div class="package" data-price="10 Ksh" data-duration="2 Hrs">
+                <h3>10 Ksh</h3><p>2 Hrs</p>
+            </div>
+            <div class="package" data-price="50 Ksh" data-duration="12 Hrs">
+                <h3>50 Ksh</h3><p>12 Hrs</p>
+            </div>
+            <div class="package" data-price="100 Ksh" data-duration="24 Hrs">
+                <h3>100 Ksh</h3><p>24 Hrs</p>
+            </div>
+            <div class="package" data-price="300 Ksh" data-duration="7 Days">
+                <h3>300 Ksh</h3><p>7 Days</p>
+            </div>
+            <div class="package" data-price="1000 Ksh" data-duration="30 Days">
+                <h3>1000 Ksh</h3><p>30 Days</p>
+            </div>
+        </div>
+        <button id="adminLoginButton">Admin</button>
+    </div>
+
+    <!-- Admin View Section -->
+    <div id="adminView" style="display:none;">
+        <h2>Admin Panel</h2>
+        <label for="adminName">Admin/Operator Name:</label>
+        <input type="text" id="adminName" placeholder="Enter your name">
+
+        <h3>Connected Devices: <span id="connectedDevices">0</span></h3>
+        <table id="deviceTable">
+            <thead>
+                <tr>
+                    <th>Device</th>
+                    <th>Data Used (MB)</th>
+                    <th>Connection Time (min)</th>
+                    <th>Speed (Mbps)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h3>Generated Password: <span id="currentPassword">N/A</span></h3>
+        <button id="generatePasswordBtn">Generate New Password</button>
+
+        <canvas id="dataUsageGraph"></canvas>
+        <canvas id="deviceHistogram"></canvas>
+
+        <button id="adminLogout">Logout</button>
+    </div>
+
+    <!-- Admin Login Form -->
+    <form id="adminLoginForm" style="display:none;">
+        <input type="text" id="adminUsername" placeholder="Admin Username" required>
+        <input type="password" id="adminPassword" placeholder="Admin Password" required>
+        <button type="submit">Login</button>
+    </form>
+    <p id="adminLoginMessage" style="color:red;"></p>
+</div>
+
+<script>
+const adminUsername = "hotspot";
+const adminPassword = "0021";
+
+let currentPassword = '';
+let connectedDevices = 0;
+
+function generatePassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    const digits = '0123456789';
+    let password = '';
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+    password += digits.charAt(Math.floor(Math.random() * digits.length));
+    password += digits.charAt(Math.floor(Math.random() * digits.length));
+    return password;
+}
+
+document.getElementById('generatePasswordBtn').addEventListener('click', function() {
+    currentPassword = generatePassword();
+    document.getElementById('currentPassword').textContent = currentPassword;
+});
+
+document.getElementById('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const enteredPassword = document.getElementById('hotspotPassword').value;
+    const message = document.getElementById('loginMessage');
+    if (enteredPassword === currentPassword) {
+        message.style.color = 'green';
+        message.textContent = 'Successfully connected!';
+    } else {
+        message.style.color = 'red';
+        message.textContent = 'Incorrect password. Please try again.';
+    }
+});
+
+document.getElementById('adminLoginButton').addEventListener('click', function () {
+    document.getElementById('adminLoginForm').style.display = 'block';
+});
+
+document.getElementById('adminLoginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const enteredUsername = document.getElementById('adminUsername').value;
+    const enteredPassword = document.getElementById('adminPassword').value;
+    if (enteredUsername === adminUsername && enteredPassword === adminPassword) {
+        document.getElementById('userView').style.display = 'none';
+        document.getElementById('adminView').style.display = 'block';
+    } else {
+        document.getElementById('adminLoginMessage').textContent = 'Invalid credentials';
+    }
+});
+
+document.getElementById('adminLogout').addEventListener('click', function () {
+    document.getElementById('userView').style.display = 'block';
+    document.getElementById('adminView').style.display = 'none';
+});
+</script>
+
+</body>
+</html>
